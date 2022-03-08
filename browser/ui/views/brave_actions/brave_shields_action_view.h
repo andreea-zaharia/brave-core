@@ -37,6 +37,7 @@ class BraveShieldsActionView
 
  private:
   void ButtonPressed();
+  bool SchemeIsLocal(GURL url);
   void UpdateIconState();
   gfx::ImageSkia GetIconImage(bool is_enabled);
   std::unique_ptr<IconWithBadgeImageSource> GetImageSource();
