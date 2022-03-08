@@ -11,6 +11,7 @@
 
 #include "brave/browser/ui/brave_actions/brave_action_icon_with_badge_image_source.h"
 #include "brave/common/webui_url_constants.h"
+#include "brave/components/l10n/common/locale_util.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
 #include "chrome/browser/ui/views/chrome_layout_provider.h"
@@ -18,7 +19,6 @@
 #include "components/grit/brave_components_resources.h"
 #include "components/grit/brave_components_strings.h"
 #include "extensions/common/constants.h"
-#include "ui/base/l10n/l10n_util.h"
 #include "ui/base/models/image_model.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/gfx/geometry/rect.h"
@@ -62,7 +62,8 @@ BraveShieldsActionView::BraveShieldsActionView(Profile* profile,
       [](views::View* host) { return GetToolbarInkDropBaseColor(host); },
       this));
 
-  SetAccessibleName(l10n_util::GetStringUTF16(IDS_BRAVE_SHIELDS));
+  SetAccessibleName(
+      brave_l10n::GetLocalizedResourceUTF16String(IDS_BRAVE_SHIELDS));
   SetHasInkDropActionOnClick(true);
   SetHorizontalAlignment(gfx::ALIGN_CENTER);
   ink_drop->SetVisibleOpacity(kToolbarInkDropVisibleOpacity);
