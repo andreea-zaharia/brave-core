@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "bat/ads/internal/account/redeem_unblinded_token/user_data/confirmation_platform_dto_user_data.h"
+#include "bat/ads/internal/account/user_data/platform_user_data.h"
 
 #include "bat/ads/internal/unittest_base.h"
 #include "bat/ads/internal/unittest_util.h"
@@ -12,19 +12,19 @@
 
 namespace ads {
 
-class BatAdsConfirmationPlatformDtoUserDataTest : public UnitTestBase {
+class BatAdsPlatformUserDataTest : public UnitTestBase {
  protected:
-  BatAdsConfirmationPlatformDtoUserDataTest() = default;
+  BatAdsPlatformUserDataTest() = default;
 
-  ~BatAdsConfirmationPlatformDtoUserDataTest() override = default;
+  ~BatAdsPlatformUserDataTest() override = default;
 };
 
-TEST_F(BatAdsConfirmationPlatformDtoUserDataTest, GetPlatform) {
+TEST_F(BatAdsPlatformUserDataTest, GetPlatform) {
   // Arrange
   MockPlatformHelper(platform_helper_mock_, PlatformType::kMacOS);
 
   // Act
-  base::DictionaryValue platform = dto::user_data::GetPlatform();
+  const base::DictionaryValue platform = user_data::GetPlatform();
 
   // Assert
   base::DictionaryValue expected_platform;

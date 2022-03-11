@@ -3,14 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "bat/ads/internal/account/redeem_unblinded_token/user_data/confirmation_conversion_dto_user_data.h"
-
-#include <string>
+#include "bat/ads/internal/account/user_data/conversion_user_data.h"
 
 #include "bat/ads/internal/conversions/conversion_queue_item_info.h"
-#include "bat/ads/internal/unittest_base.h"
 #include "bat/ads/internal/unittest_time_util.h"
-#include "bat/ads/internal/unittest_util.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 // npm run test -- brave_unit_tests --filter=BatAds*
 
@@ -18,6 +15,7 @@ namespace ads {
 
 namespace {
 
+// TODO(tmancey): Decouple
 bool IsValidEnvelope(const base::Value& envelope) {
   if (!envelope.is_dict()) {
     return false;
@@ -48,14 +46,7 @@ bool IsValidEnvelope(const base::Value& envelope) {
 
 }  // namespace
 
-class BatAdsConfirmationConversionDtoUserDataTest : public UnitTestBase {
- protected:
-  BatAdsConfirmationConversionDtoUserDataTest() = default;
-
-  ~BatAdsConfirmationConversionDtoUserDataTest() override = default;
-};
-
-TEST_F(BatAdsConfirmationConversionDtoUserDataTest, GetInvalidConversion) {
+TEST(BatAdsConversionUserDataTest, GetInvalidConversion) {
   // Arrange
   ConversionQueueItemInfo info;
   info.creative_instance_id = "3519f52c-46a4-4c48-9c2b-c264c0067f04";
@@ -67,7 +58,7 @@ TEST_F(BatAdsConfirmationConversionDtoUserDataTest, GetInvalidConversion) {
   info.process_at = Now();
 
   // Act
-  const base::DictionaryValue user_data = dto::user_data::GetConversion(info);
+  const base::DictionaryValue user_data = user_data::GetConversion(info);
 
   // Assert
   const base::Value* envelope_dictionary =
@@ -76,7 +67,7 @@ TEST_F(BatAdsConfirmationConversionDtoUserDataTest, GetInvalidConversion) {
   EXPECT_FALSE(envelope_dictionary);
 }
 
-TEST_F(BatAdsConfirmationConversionDtoUserDataTest, GetValidConversion) {
+TEST(BatAdsConversionUserDataTest, GetValidConversion) {
   // Arrange
   ConversionQueueItemInfo info;
   info.creative_instance_id = "3519f52c-46a4-4c48-9c2b-c264c0067f04";
@@ -88,7 +79,7 @@ TEST_F(BatAdsConfirmationConversionDtoUserDataTest, GetValidConversion) {
   info.process_at = Now();
 
   // Act
-  const base::DictionaryValue user_data = dto::user_data::GetConversion(info);
+  const base::DictionaryValue user_data = user_data::GetConversion(info);
 
   // Assert
   const base::Value* envelope_dictionary =

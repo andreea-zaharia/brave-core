@@ -3,28 +3,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "bat/ads/internal/account/redeem_unblinded_token/user_data/confirmation_studies_dto_user_data.h"
+#include "bat/ads/internal/account/user_data/studies_user_data.h"
 
 #include <string>
 #include <utility>
 
 #include "base/metrics/field_trial.h"
+#include "base/values.h"
 #include "bat/ads/internal/features/features.h"
-#include "bat/ads/internal/unittest_base.h"
-#include "bat/ads/internal/unittest_util.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 // npm run test -- brave_unit_tests --filter=BatAds*
 
 namespace ads {
 
-class BatAdsConfirmationStudiesDtoUserDataTest : public UnitTestBase {
- protected:
-  BatAdsConfirmationStudiesDtoUserDataTest() = default;
-
-  ~BatAdsConfirmationStudiesDtoUserDataTest() override = default;
-};
-
-TEST_F(BatAdsConfirmationStudiesDtoUserDataTest, GetStudies) {
+TEST(BatAdsStudiesUserDataTest, GetStudies) {
   // Arrange
   std::string trial_name_1 = "BraveAdsFooStudy";
   std::string group_name_1 = "GroupA";
@@ -47,7 +40,7 @@ TEST_F(BatAdsConfirmationStudiesDtoUserDataTest, GetStudies) {
   ASSERT_EQ(3U, base::FieldTrialList::GetFieldTrialCount());
 
   // Act
-  base::DictionaryValue studies = dto::user_data::GetStudies();
+  const base::DictionaryValue studies = user_data::GetStudies();
 
   // Assert
   base::Value study_1(base::Value::Type::DICTIONARY);

@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "bat/ads/internal/account/redeem_unblinded_token/user_data/confirmation_locale_dto_user_data.h"
+#include "bat/ads/internal/account/user_data/locale_user_data.h"
 
 #include "bat/ads/internal/unittest_base.h"
 #include "bat/ads/internal/unittest_util.h"
@@ -12,21 +12,20 @@
 
 namespace ads {
 
-class BatAdsConfirmationLocaleDtoUserDataTest : public UnitTestBase {
+class BatAdsLocaleUserDataTest : public UnitTestBase {
  protected:
-  BatAdsConfirmationLocaleDtoUserDataTest() = default;
+  BatAdsLocaleUserDataTest() = default;
 
-  ~BatAdsConfirmationLocaleDtoUserDataTest() override = default;
+  ~BatAdsLocaleUserDataTest() override = default;
 };
 
-TEST_F(BatAdsConfirmationLocaleDtoUserDataTest,
-       GetLocaleForNonReleaseBuildChannel) {
+TEST_F(BatAdsLocaleUserDataTest, GetLocaleForNonReleaseBuildChannel) {
   // Arrange
   SetBuildChannel(false, "beta");
   MockLocaleHelper(locale_helper_mock_, "en-GB");
 
   // Act
-  base::DictionaryValue locale = dto::user_data::GetLocale();
+  const base::DictionaryValue locale = user_data::GetLocale();
 
   // Assert
   base::DictionaryValue expected_locale;
@@ -34,14 +33,13 @@ TEST_F(BatAdsConfirmationLocaleDtoUserDataTest,
   EXPECT_EQ(expected_locale, locale);
 }
 
-TEST_F(BatAdsConfirmationLocaleDtoUserDataTest,
-       GetLocaleForReleaseBuildChannel) {
+TEST_F(BatAdsLocaleUserDataTest, GetLocaleForReleaseBuildChannel) {
   // Arrange
   SetBuildChannel(true, "release");
   MockLocaleHelper(locale_helper_mock_, "en-GB");
 
   // Act
-  base::DictionaryValue locale = dto::user_data::GetLocale();
+  const base::DictionaryValue locale = user_data::GetLocale();
 
   // Assert
   base::DictionaryValue expected_locale;
@@ -50,14 +48,13 @@ TEST_F(BatAdsConfirmationLocaleDtoUserDataTest,
   EXPECT_EQ(expected_locale, locale);
 }
 
-TEST_F(BatAdsConfirmationLocaleDtoUserDataTest,
-       GetLocaleForCountryNotInAnonymitySet) {
+TEST_F(BatAdsLocaleUserDataTest, GetLocaleForCountryNotInAnonymitySet) {
   // Arrange
   SetBuildChannel(true, "release");
   MockLocaleHelper(locale_helper_mock_, "en-MC");
 
   // Act
-  base::DictionaryValue locale = dto::user_data::GetLocale();
+  const base::DictionaryValue locale = user_data::GetLocale();
 
   // Assert
   base::DictionaryValue expected_locale;
@@ -65,14 +62,14 @@ TEST_F(BatAdsConfirmationLocaleDtoUserDataTest,
   EXPECT_EQ(expected_locale, locale);
 }
 
-TEST_F(BatAdsConfirmationLocaleDtoUserDataTest,
+TEST_F(BatAdsLocaleUserDataTest,
        GetLocaleForCountryNotInAnonymitySetButShouldClassifyAsOther) {
   // Arrange
   SetBuildChannel(true, "release");
   MockLocaleHelper(locale_helper_mock_, "en-CX");
 
   // Act
-  base::DictionaryValue locale = dto::user_data::GetLocale();
+  const base::DictionaryValue locale = user_data::GetLocale();
 
   // Assert
   base::DictionaryValue expected_locale;

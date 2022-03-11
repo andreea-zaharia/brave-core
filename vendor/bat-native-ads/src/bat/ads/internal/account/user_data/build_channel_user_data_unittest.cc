@@ -3,28 +3,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "bat/ads/internal/account/redeem_unblinded_token/user_data/confirmation_build_channel_dto_user_data.h"
+#include "bat/ads/internal/account/user_data/build_channel_user_data.h"
 
-#include "bat/ads/internal/unittest_base.h"
+#include "base/values.h"
 #include "bat/ads/internal/unittest_util.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 // npm run test -- brave_unit_tests --filter=BatAds*
 
 namespace ads {
 
-class BatAdsConfirmationBuildChannelDtoUserDataTest : public UnitTestBase {
- protected:
-  BatAdsConfirmationBuildChannelDtoUserDataTest() = default;
-
-  ~BatAdsConfirmationBuildChannelDtoUserDataTest() override = default;
-};
-
-TEST_F(BatAdsConfirmationBuildChannelDtoUserDataTest, GetBuildChannel) {
+TEST(BatAdsBuildChannelUserDataTest, GetBuildChannel) {
   // Arrange
   SetBuildChannel(false, "release");
 
   // Act
-  base::DictionaryValue build_channel = dto::user_data::GetBuildChannel();
+  const base::DictionaryValue build_channel = user_data::GetBuildChannel();
 
   // Assert
   base::DictionaryValue expected_build_channel;

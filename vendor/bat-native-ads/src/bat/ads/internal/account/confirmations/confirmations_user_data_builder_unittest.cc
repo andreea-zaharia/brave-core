@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "bat/ads/internal/account/redeem_unblinded_token/user_data/confirmation_dto_user_data_builder.h"
+#include "bat/ads/internal/account/confirmations/confirmations_user_data_builder.h"
 
 #include <memory>
 #include <string>
@@ -19,6 +19,7 @@ namespace ads {
 
 namespace {
 
+// TODO(tmancey): Decouple
 bool IsValidEnvelope(const base::Value& envelope) {
   if (!envelope.is_dict()) {
     return false;
@@ -100,12 +101,12 @@ bool IsValidUserDataDictionary(const base::Value& user_data) {
 
 }  // namespace
 
-class BatAdsConfirmationDtoUserDataTest : public UnitTestBase {
+class BatAdsConfirmationUserDataTest : public UnitTestBase {
  protected:
-  BatAdsConfirmationDtoUserDataTest()
+  BatAdsConfirmationUserDataTest()
       : database_table_(std::make_unique<database::table::ConversionQueue>()) {}
 
-  ~BatAdsConfirmationDtoUserDataTest() override = default;
+  ~BatAdsConfirmationUserDataTest() override = default;
 
   void Save(const ConversionQueueItemList& conversion_queue_items) {
     database_table_->Save(conversion_queue_items,
@@ -115,7 +116,7 @@ class BatAdsConfirmationDtoUserDataTest : public UnitTestBase {
   std::unique_ptr<database::table::ConversionQueue> database_table_;
 };
 
-TEST_F(BatAdsConfirmationDtoUserDataTest, BuildWithoutConversion) {
+TEST_F(BatAdsConfirmationUserDataTest, BuildWithoutConversion) {
   // Arrange
   MockPlatformHelper(platform_helper_mock_, PlatformType::kMacOS);
   SetBuildChannel(true, "release");
@@ -127,9 +128,9 @@ TEST_F(BatAdsConfirmationDtoUserDataTest, BuildWithoutConversion) {
   const ConfirmationType confirmation_type = ConfirmationType::kViewed;
 
   // Assert
-  dto::user_data::Build(
-      creative_instance_id, confirmation_type,
-      [=](const base::Value& user_data) {
+  ConfirmationsUserDataBuilder user_data_builder(creative_instance_id,
+                                                 confirmation_type);
+  user_data_builder.Build([=](const base::Value& user_data) {
         const base::DictionaryValue* user_data_dictionary = nullptr;
         user_data.GetAsDictionary(&user_data_dictionary);
 
@@ -144,7 +145,7 @@ TEST_F(BatAdsConfirmationDtoUserDataTest, BuildWithoutConversion) {
       });
 }
 
-TEST_F(BatAdsConfirmationDtoUserDataTest, BuildWithConversion) {
+TEST_F(BatAdsConfirmationUserDataTest, BuildWithConversion) {
   // Arrange
   MockPlatformHelper(platform_helper_mock_, PlatformType::kMacOS);
   SetBuildChannel(true, "release");
@@ -172,13 +173,13 @@ TEST_F(BatAdsConfirmationDtoUserDataTest, BuildWithConversion) {
   // Act
 
   // Assert
-  dto::user_data::Build(
-      creative_instance_id, confirmation_type,
-      [=](const base::Value& user_data) {
+  ConfirmationsUserDataBuilder user_data_builder(creative_instance_id,
+                                                 confirmation_type);
+  user_data_builder.Build([=](const base::Value& user_data) {
         const base::DictionaryValue* user_data_dictionary = nullptr;
         user_data.GetAsDictionary(&user_data_dictionary);
 
-        bool is_valid =
+        const bool is_valid =
             IsValidUserDataDictionary(user_data_dictionary->Clone());
 
         EXPECT_TRUE(is_valid);
