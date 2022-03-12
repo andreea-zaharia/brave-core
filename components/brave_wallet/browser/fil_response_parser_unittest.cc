@@ -35,7 +35,8 @@ TEST(FilResponseParserUnitTest, ParseFilGetTransactionCount) {
   EXPECT_TRUE(brave_wallet::ParseFilGetTransactionCount(json, &value));
   EXPECT_EQ(value, max_nonce);
 
-  json = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":1}";
+  json =
+      "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":1}";
   value = 0;
   EXPECT_TRUE(brave_wallet::ParseFilGetTransactionCount(json, &value));
   EXPECT_EQ(value, 1u);
