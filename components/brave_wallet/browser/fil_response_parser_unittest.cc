@@ -21,9 +21,7 @@ TEST(FilResponseParserUnitTest, ParseFilGetBalance) {
   EXPECT_TRUE(brave_wallet::ParseFilGetBalance(json, &value));
   EXPECT_EQ(value, "10000000000000000000000000000");
 
-  json =
-      "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":"
-      "\"\"}";
+  json = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"\"}";
   EXPECT_TRUE(brave_wallet::ParseFilGetBalance(json, &value));
   EXPECT_TRUE(value.empty());
 }
@@ -32,7 +30,7 @@ TEST(FilResponseParserUnitTest, ParseFilGetTransactionCount) {
   auto max_nonce = UINT64_MAX;
   std::string json =
       "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":" + std::to_string(max_nonce) +
-      " }";
+      "}";
   uint64_t value = 0;
   EXPECT_TRUE(brave_wallet::ParseFilGetTransactionCount(json, &value));
   EXPECT_EQ(value, max_nonce);
