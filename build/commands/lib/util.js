@@ -517,7 +517,7 @@ const util = {
     let msBuild = ''
     if (vsVersion === '2017') {
       msBuild = path.join(vsPath, 'MSBuild', '15.0', 'Bin', 'MSBuild.exe')
-    } else if (vsVersion === '2019') {
+    } else if (vsVersion === '2019' || vsVersion === '2022') {
       msBuild = path.join(vsPath, 'MSBuild', 'Current', 'Bin', 'MSBuild.exe')
     } else {
       throw 'Error: unexpected version of Visual Studio: ' + vsVersion
@@ -525,7 +525,14 @@ const util = {
 
     // Build redirect-cc.sln
     const arch = process.arch === 'x32' ? 'x86' : process.arch
-    const toolset = vsVersion === '2017' ? 'v141' : 'v142'
+    let toolset = ''
+    if (vsVersion === '2017') {
+      toolset = 'v141'
+    } else if (vsVersion === '2019') {
+      toolset = 'v142'
+    } else if (vsVersion === '2022') {
+      toolset = 'v143'
+    }
     const msBuildArgs = [
       path.join(config.braveCoreDir, 'buildtools', 'win', 'redirect-cc', 'redirect-cc.sln'),
       '/p:Configuration=Release',
