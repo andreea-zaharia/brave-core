@@ -236,4 +236,27 @@ TEST(EthereumKeyringUnitTest, ImportedAccounts) {
   EXPECT_TRUE(keyring.ImportAccount(private_key).empty());
 }
 
+TEST(EthereumKeyringUnitTest, GetPublicKeyFromX25519_XSalsa20_Poly1305) {
+  EthereumKeyring keyring;
+  std::vector<uint8_t> seed;
+  EXPECT_TRUE(base::HexStringToBytes(
+      "13ca6c28d26812f82db27908de0b0b7b18940cc4e9d96ebd7de190f706741489907ef65b"
+      "8f9e36c31dc46e81472b6a5e40a4487e725ace445b8203f243fb8958",
+      &seed));
+  keyring.ConstructRootHDKey(seed, "m/44'/60'/0'/0");
+  keyring.AddAccounts(1);
+  std::string public_encryption_key;
+  EXPECT_TRUE(keyring.GetPublicKeyFromX25519_XSalsa20_Poly1305(
+      keyring.GetAddress(0), &public_encryption_key));
+  EXPECT_EQ(public_encryption_key,
+            "UomNFHJzgASsYuUheor/lHMGlaIdILv0GNRfqHmPQWg=");
+
+  // Incorrect address
+  EXPECT_FALSE(keyring.GetPublicKeyFromX25519_XSalsa20_Poly1305(
+      "0xbE93f9BacBcFFC8ee6663f2647917ed7A20a57BB", &public_encryption_key));
+  // Invalid address
+  EXPECT_FALSE(keyring.GetPublicKeyFromX25519_XSalsa20_Poly1305(
+      "", &public_encryption_key));
+}
+
 }  // namespace brave_wallet
