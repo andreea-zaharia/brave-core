@@ -79,6 +79,8 @@ class BraveWalletProviderImpl final
   void RecoverAddress(const std::string& address,
                       const std::string& message,
                       RecoverAddressCallback callback) override;
+  void GetEncryptionPublicKey(const std::string& address,
+                              GetEncryptionPublicKeyCallback callback) override;
   void SignTypedMessage(const std::string& address,
                         const std::string& message,
                         const std::vector<uint8_t>& domain_hash,
@@ -181,6 +183,13 @@ class BraveWalletProviderImpl final
   void ContinueGetDefaultKeyringInfo(
       GetNetworkAndDefaultKeyringInfoCallback callback,
       mojom::NetworkInfoPtr chain);
+  void ContinueGetEncryptionPublicKey(
+      GetEncryptionPublicKeyCallback callback,
+      const std::string& address,
+      const std::vector<std::string>& allowed_accounts,
+      mojom::ProviderError error,
+      const std::string& error_message);
+
   void OnGetNetworkAndDefaultKeyringInfo(
       GetNetworkAndDefaultKeyringInfoCallback callback,
       mojom::NetworkInfoPtr chain,

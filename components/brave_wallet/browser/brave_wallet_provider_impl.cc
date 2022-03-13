@@ -417,6 +417,39 @@ void BraveWalletProviderImpl::RecoverAddress(const std::string& message,
   std::move(callback).Run(address, mojom::ProviderError::kSuccess, "");
 }
 
+void BraveWalletProviderImpl::GetEncryptionPublicKey(
+    const std::string& address,
+    GetEncryptionPublicKeyCallback callback) {
+  GetAllowedAccounts(
+      false,
+      base::BindOnce(&BraveWalletProviderImpl::ContinueGetEncryptionPublicKey,
+                     weak_factory_.GetWeakPtr(), std::move(callback), address));
+}
+
+void BraveWalletProviderImpl::ContinueGetEncryptionPublicKey(
+    GetEncryptionPublicKeyCallback callback,
+    const std::string& address,
+    const std::vector<std::string>& allowed_accounts,
+    mojom::ProviderError error,
+    const std::string& error_message) {
+  if (error != mojom::ProviderError::kSuccess) {
+    std::move(callback).Run("", error, error_message);
+    return;
+  }
+
+  if (!CheckAccountAllowed(address, allowed_accounts)) {
+    std::move(callback).Run(
+        "", mojom::ProviderError::kInvalidParams,
+        l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
+    return;
+  }
+
+  // Only show bubble when there is no immediate error
+  brave_wallet_service_->AddGetPublicKeyRequest(address, delegate_->GetOrigin(),
+                                                std::move(callback));
+  delegate_->ShowPanel();
+}
+
 void BraveWalletProviderImpl::SignTypedMessage(
     const std::string& address,
     const std::string& message,

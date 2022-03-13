@@ -774,6 +774,31 @@ void BraveWalletService::AddSuggestTokenRequest(
   add_suggest_token_callbacks_[addr] = std::move(callback);
 }
 
+void BraveWalletService::AddGetPublicKeyRequest(
+    const std::string& address,
+    const GURL& origin,
+    AddGetEncryptionPublicKeyCallback callback) {
+  // There can be only 1 request per origin
+  if (add_get_encryption_public_key_requests_.contains(origin)) {
+    std::move(callback).Run(
+        "", mojom::ProviderError::kUserRejectedRequest,
+        l10n_util::GetStringUTF8(IDS_WALLET_ALREADY_IN_PROGRESS_ERROR));
+    return;
+  }
+  add_get_encryption_public_key_requests_[origin] = address;
+  add_get_encryption_public_key_callbacks_[origin] = std::move(callback);
+}
+
+void BraveWalletService::GetPendingGetEncryptionPublicKeyRequests(
+    GetPendingGetEncryptionPublicKeyRequestsCallback callback) {
+  std::vector<mojom::GetEncryptionPublicKeyRequestPtr> requests;
+  for (const auto& request : add_get_encryption_public_key_requests_) {
+    requests.push_back(mojom::GetEncryptionPublicKeyRequest::New(
+        request.first, request.second, ""));
+  }
+  std::move(callback).Run(std::move(requests));
+}
+
 void BraveWalletService::GetPendingAddSuggestTokenRequests(
     GetPendingAddSuggestTokenRequestsCallback callback) {
   std::vector<mojom::AddSuggestTokenRequestPtr> requests;
@@ -809,6 +834,37 @@ void BraveWalletService::NotifyAddSuggestTokenRequestsProcessed(
       add_suggest_token_callbacks_.erase(addr);
       std::move(callback).Run(approved, mojom::ProviderError::kSuccess, "");
     }
+  }
+}
+
+void BraveWalletService::NotifyGetPublicKeyRequestProcessed(
+    bool approved,
+    const GURL& origin) {
+  if (!add_get_encryption_public_key_requests_.contains(origin) ||
+      !add_get_encryption_public_key_callbacks_.contains(origin)) {
+    return;
+  }
+  auto callback = std::move(add_get_encryption_public_key_callbacks_[origin]);
+  std::string address = add_get_encryption_public_key_requests_[origin];
+  add_get_encryption_public_key_requests_.erase(origin);
+  add_get_encryption_public_key_callbacks_.erase(origin);
+
+  if (approved) {
+    std::string key;
+    if (!keyring_service_
+             ->GetPublicKeyFromX25519_XSalsa20_Poly1305ByDefaultKeyring(address,
+                                                                        &key)) {
+      std::move(callback).Run(
+          "", mojom::ProviderError::kInternalError,
+          l10n_util::GetStringUTF8(IDS_WALLET_INTERNAL_ERROR));
+      return;
+    }
+
+    std::move(callback).Run(key, mojom::ProviderError::kSuccess, "");
+  } else {
+    std::move(callback).Run(
+        "", mojom::ProviderError::kUserRejectedRequest,
+        l10n_util::GetStringUTF8(IDS_WALLET_USER_REJECTED_REQUEST));
   }
 }
 

@@ -47,6 +47,8 @@ class BraveWalletService : public KeyedService,
       base::OnceCallback<void(bool, const std::string&, const std::string&)>;
   using AddSuggestTokenCallback =
       base::OnceCallback<void(bool, mojom::ProviderError, const std::string&)>;
+  using AddGetEncryptionPublicKeyCallback = base::OnceCallback<
+      void(const std::string&, mojom::ProviderError, const std::string&)>;
 
   BraveWalletService(std::unique_ptr<BraveWalletServiceDelegate> delegate,
                      KeyringService* keyring_service,
@@ -118,9 +120,13 @@ class BraveWalletService : public KeyedService,
       const std::string& error) override;
   void GetPendingAddSuggestTokenRequests(
       GetPendingAddSuggestTokenRequestsCallback callback) override;
+  void GetPendingGetEncryptionPublicKeyRequests(
+      GetPendingGetEncryptionPublicKeyRequestsCallback callback) override;
   void NotifyAddSuggestTokenRequestsProcessed(
       bool approved,
       const std::vector<std::string>& contract_addresses) override;
+  void NotifyGetPublicKeyRequestProcessed(bool approved,
+                                          const GURL& origin) override;
 
   // BraveWalletServiceDelegate::Observer:
   void OnActiveOriginChanged(const std::string& origin) override;
@@ -133,6 +139,9 @@ class BraveWalletService : public KeyedService,
                              SignMessageRequestCallback callback);
   void AddSuggestTokenRequest(mojom::AddSuggestTokenRequestPtr request,
                               AddSuggestTokenCallback callback);
+  void AddGetPublicKeyRequest(const std::string& address,
+                              const GURL& origin,
+                              AddGetEncryptionPublicKeyCallback callback);
 
   void RemovePrefListenersForTests();
 
@@ -193,6 +202,9 @@ class BraveWalletService : public KeyedService,
       add_suggest_token_callbacks_;
   base::flat_map<std::string, mojom::AddSuggestTokenRequestPtr>
       add_suggest_token_requests_;
+  base::flat_map<GURL, std::string> add_get_encryption_public_key_requests_;
+  base::flat_map<GURL, AddGetEncryptionPublicKeyCallback>
+      add_get_encryption_public_key_callbacks_;
   mojo::RemoteSet<mojom::BraveWalletServiceObserver> observers_;
   std::unique_ptr<BraveWalletServiceDelegate> delegate_;
   raw_ptr<KeyringService> keyring_service_ = nullptr;

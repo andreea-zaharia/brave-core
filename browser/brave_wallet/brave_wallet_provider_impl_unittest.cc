@@ -65,6 +65,10 @@ namespace brave_wallet {
 
 namespace {
 
+const char kMnemonic1[] =
+    "divide cruise upon flag harsh carbon filter merit once advice bright "
+    "drive";
+
 void ValidateErrorCode(BraveWalletProviderImpl* provider,
                        const std::string& payload,
                        mojom::ProviderError expected) {
@@ -213,6 +217,19 @@ class BraveWalletProviderImplUnitTest : public testing::Test {
         "brave",
         base::BindLambdaForTesting([&run_loop](const std::string& mnemonic) {
           EXPECT_FALSE(mnemonic.empty());
+          run_loop.Quit();
+        }));
+    run_loop.Run();
+  }
+
+  void RestoreWallet(const std::string& mnemonic,
+                     const std::string& password,
+                     bool is_legacy_brave_wallet) {
+    base::RunLoop run_loop;
+    keyring_service_->RestoreWallet(
+        mnemonic, password, is_legacy_brave_wallet,
+        base::BindLambdaForTesting([&](bool success) {
+          ASSERT_TRUE(success);
           run_loop.Quit();
         }));
     run_loop.Run();
@@ -494,6 +511,21 @@ class BraveWalletProviderImplUnitTest : public testing::Test {
     return requests_out;
   }
 
+  std::vector<mojom::GetEncryptionPublicKeyRequestPtr>
+  GetPendingGetEncryptionPublicKeyRequests() const {
+    base::RunLoop run_loop;
+    std::vector<mojom::GetEncryptionPublicKeyRequestPtr> requests_out;
+    brave_wallet_service_->GetPendingGetEncryptionPublicKeyRequests(
+        base::BindLambdaForTesting(
+            [&](std::vector<mojom::GetEncryptionPublicKeyRequestPtr> requests) {
+              for (const auto& request : requests)
+                requests_out.push_back(request.Clone());
+              run_loop.Quit();
+            }));
+    run_loop.Run();
+    return requests_out;
+  }
+
   std::vector<std::string> GetAddresses() {
     std::vector<std::string> result;
     base::RunLoop run_loop;
@@ -557,6 +589,33 @@ class BraveWalletProviderImplUnitTest : public testing::Test {
     if (user_approved)
       json_rpc_service_->NotifySwitchChainRequestProcessed(*user_approved,
                                                            GetOrigin());
+    run_loop.Run();
+  }
+
+  void GetEncryptionPublicKey(const std::string& address,
+                              bool approved,
+                              std::string* key_out,
+                              mojom::ProviderError* error_out,
+                              std::string* error_message_out) {
+    base::RunLoop run_loop;
+    provider_->GetEncryptionPublicKey(
+        address, base::BindLambdaForTesting(
+                     [&](const std::string& key, mojom::ProviderError error,
+                         const std::string& error_message) {
+                       *key_out = key;
+                       *error_out = error;
+                       *error_message_out = error_message;
+                       run_loop.Quit();
+                     }));
+    auto requests = GetPendingGetEncryptionPublicKeyRequests();
+    if (requests.size() > 0) {
+      ASSERT_EQ(requests.size(), 1u);
+      EXPECT_EQ(requests[0]->origin, GetOrigin());
+      EXPECT_EQ(requests[0]->address, address);
+      EXPECT_TRUE(brave_wallet_tab_helper()->IsShowingBubble());
+      brave_wallet_service_->NotifyGetPublicKeyRequestProcessed(approved,
+                                                                GetOrigin());
+    }
     run_loop.Run();
   }
 
@@ -1735,6 +1794,53 @@ TEST_F(BraveWalletProviderImplUnitTest, AddSuggestToken) {
 
   AddSuggestToken(nullptr, true, &approved, &error, &error_message);
   EXPECT_FALSE(approved);
+  EXPECT_EQ(mojom::ProviderError::kInvalidParams, error);
+  EXPECT_FALSE(error_message.empty());
+}
+
+TEST_F(BraveWalletProviderImplUnitTest, GetEncryptionPublicKey) {
+  RestoreWallet(kMnemonic1, "brave", false);
+  CreateBraveWalletTabHelper();
+  GURL url("https://brave.com");
+  Navigate(url);
+  AddEthereumPermission(url);
+  brave_wallet_tab_helper()->SetSkipDelegateForTesting(true);
+
+  // Happy path
+  std::string key;
+  mojom::ProviderError error;
+  std::string error_message;
+  GetEncryptionPublicKey(from(), true, &key, &error, &error_message);
+  EXPECT_EQ(key, "GeiNTGIpEKEVFeMBpd3aVs/S2EjoF8FOoichRuqjBg0=");
+  EXPECT_EQ(mojom::ProviderError::kSuccess, error);
+  EXPECT_TRUE(error_message.empty());
+
+  // Locked should give invalid params error
+  std::string from_address = from();
+  Lock();
+  GetEncryptionPublicKey(from_address, true, &key, &error, &error_message);
+  EXPECT_TRUE(key.empty());
+  EXPECT_EQ(mojom::ProviderError::kInvalidParams, error);
+  EXPECT_FALSE(error_message.empty());
+
+  // Unlocked and user rejected
+  Unlock();
+  GetEncryptionPublicKey(from(), false, &key, &error, &error_message);
+  EXPECT_TRUE(key.empty());
+  EXPECT_EQ(mojom::ProviderError::kUserRejectedRequest, error);
+  EXPECT_EQ(l10n_util::GetStringUTF8(IDS_WALLET_USER_REJECTED_REQUEST),
+            error_message);
+
+  // Address without permissions gives the invalid params error
+  AddAccount();
+  GetEncryptionPublicKey(from(1), true, &key, &error, &error_message);
+  EXPECT_TRUE(key.empty());
+  EXPECT_EQ(mojom::ProviderError::kInvalidParams, error);
+  EXPECT_FALSE(error_message.empty());
+
+  // Invalid address gives the invalid params error
+  GetEncryptionPublicKey("", true, &key, &error, &error_message);
+  EXPECT_TRUE(key.empty());
   EXPECT_EQ(mojom::ProviderError::kInvalidParams, error);
   EXPECT_FALSE(error_message.empty());
 }

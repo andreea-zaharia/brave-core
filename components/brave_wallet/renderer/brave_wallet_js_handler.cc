@@ -337,6 +337,28 @@ void BraveWalletJSHandler::OnSignRecoverMessage(
                error == mojom::ProviderError::kSuccess);
 }
 
+void BraveWalletJSHandler::OnGetEncryptionPublicKey(
+    base::Value id,
+    v8::Global<v8::Context> global_context,
+    std::unique_ptr<v8::Global<v8::Function>> global_callback,
+    v8::Global<v8::Promise::Resolver> promise_resolver,
+    v8::Isolate* isolate,
+    bool force_json_response,
+    const std::string& key,
+    mojom::ProviderError error,
+    const std::string& error_message) {
+  std::unique_ptr<base::Value> formed_response;
+  if (error == mojom::ProviderError::kSuccess)
+    formed_response = base::Value::ToUniquePtrValue(base::Value(key));
+  else
+    formed_response = GetProviderErrorDictionary(error, error_message);
+
+  SendResponse(std::move(id), std::move(global_context),
+               std::move(global_callback), std::move(promise_resolver), isolate,
+               force_json_response, std::move(formed_response),
+               error == mojom::ProviderError::kSuccess);
+}
+
 void BraveWalletJSHandler::OnAddSuggestToken(
     base::Value id,
     v8::Global<v8::Context> global_context,
@@ -736,6 +758,19 @@ bool BraveWalletJSHandler::CommonRequestOrSendAsync(
     brave_wallet_provider_->RecoverAddress(
         message, signature,
         base::BindOnce(&BraveWalletJSHandler::OnSignRecoverMessage,
+                       weak_ptr_factory_.GetWeakPtr(), std::move(id),
+                       std::move(global_context), std::move(global_callback),
+                       std::move(promise_resolver), isolate,
+                       force_json_response));
+  } else if (method == kEthGetEncryptionPublicKey) {
+    std::string address;
+    if (!ParseEthGetEncryptionPublicKeyParams(normalized_json_request,
+                                              &address)) {
+      return false;
+    }
+    brave_wallet_provider_->GetEncryptionPublicKey(
+        address,
+        base::BindOnce(&BraveWalletJSHandler::OnGetEncryptionPublicKey,
                        weak_ptr_factory_.GetWeakPtr(), std::move(id),
                        std::move(global_context), std::move(global_callback),
                        std::move(promise_resolver), isolate,

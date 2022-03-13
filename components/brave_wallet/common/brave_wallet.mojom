@@ -107,6 +107,9 @@ interface BraveWalletProvider {
   // Used for personal_ecRecover
   RecoverAddress(string message, string signature) => (string address, ProviderError error, string error_message);
 
+  // Used for eth_getEncryptionPublicKey 
+  GetEncryptionPublicKey(string address) => (string key, ProviderError error, string error_message);
+
   // Used for eth_signTypedData
   // message is for displaying the sign request to users
   // message_to_sign is the hex representation without 0x for eip712 hash
@@ -608,6 +611,12 @@ struct SwitchChainRequest {
   string chain_id;
 };
 
+struct GetEncryptionPublicKeyRequest {
+  url.mojom.Url origin;
+  string address;
+  string? message;
+};
+
 // Deals with the ETH JSON RPC API, as well as things like the user's current
 // network.
 interface JsonRpcService {
@@ -910,6 +919,11 @@ interface BraveWalletService {
   // cleared when user switch networks.
   GetPendingAddSuggestTokenRequests() => (array<AddSuggestTokenRequest> requests);
 
+  // This is used for UI notifying native when the user approves or
+  // rejects getting the public key for an origin
+  NotifyGetPublicKeyRequestProcessed(bool approved, url.mojom.Url origin);
+  GetPendingGetEncryptionPublicKeyRequests() => (array<GetEncryptionPublicKeyRequest> requests);
+
   // Resets the keyring and the related preferences
   Reset();
 };
@@ -920,10 +934,4 @@ enum DefaultWallet {
   CryptoWallets,
   BraveWalletPreferExtension,
   BraveWallet
-};
-
-struct EncryptionKeyRequest {
-  string origin;
-  string address;
-  string? message;
 };
