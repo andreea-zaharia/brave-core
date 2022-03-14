@@ -164,6 +164,7 @@ void SidebarAddItemBubbleDelegateView::AddChildViews() {
   }
   header->SetAutoColorReadabilityEnabled(false);
   header->SetPreferredSize(kAddItemBubbleEntrySize);
+  header->SetMultiLine(true);
   constexpr gfx::Insets kHeaderInsets{10, 34, 4, 8};
   header->SetBorder(views::CreateEmptyBorder(kHeaderInsets));
   header->SetHorizontalAlignment(gfx::ALIGN_LEFT);
