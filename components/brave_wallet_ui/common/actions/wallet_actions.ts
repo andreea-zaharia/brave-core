@@ -33,7 +33,7 @@ import {
   GetNativeAssetBalancesReturnInfo,
   GetBlockchainTokenBalanceReturnInfo,
   PortfolioTokenHistoryAndInfo,
-  SendTransactionParams,
+  SendEthTransactionParams,
   ER20TransferParams,
   ERC721TransferFromParams,
   AccountTransactions,
@@ -41,7 +41,8 @@ import {
   WalletInfoBase,
   WalletInfo,
   DefaultCurrencies,
-  GetPriceReturnInfo
+  GetPriceReturnInfo,
+  SendFilTransactionParams
 } from '../../constants/types'
 
 export const initialize = createAction('initialize')
@@ -79,7 +80,7 @@ export const pricesUpdated = createAction<GetPriceReturnInfo>('tokenBalancesUpda
 export const portfolioPriceHistoryUpdated = createAction<PortfolioTokenHistoryAndInfo[][]>('portfolioPriceHistoryUpdated')
 export const selectPortfolioTimeline = createAction<BraveWallet.AssetPriceTimeframe>('selectPortfolioTimeline')
 export const portfolioTimelineUpdated = createAction<BraveWallet.AssetPriceTimeframe>('portfolioTimelineUpdated')
-export const sendTransaction = createAction<SendTransactionParams>('sendTransaction')
+export const sendTransaction = createAction<SendEthTransactionParams | SendFilTransactionParams>('sendTransaction')
 export const sendERC20Transfer = createAction<ER20TransferParams>('sendERC20Transfer')
 export const sendERC721TransferFrom = createAction<ERC721TransferFromParams>('sendERC721TransferFrom')
 export const approveERC20Allowance = createAction<ApproveERC20Params>('approveERC20Allowance')

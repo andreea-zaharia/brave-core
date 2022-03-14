@@ -11,7 +11,8 @@ import {
   GetEthAddrReturnInfo,
   WalletAccountType,
   ER20TransferParams,
-  SendTransactionParams,
+  SendEthTransactionParams,
+  SendFilTransactionParams,
   ERC721TransferFromParams,
   GetChecksumEthAddressReturnInfo,
   AmountValidationErrorType
@@ -29,7 +30,7 @@ export default function useSend (
   sendAssetOptions: BraveWallet.BlockchainToken[],
   selectedAccount: WalletAccountType,
   sendERC20Transfer: SimpleActionCreator<ER20TransferParams>,
-  sendTransaction: SimpleActionCreator<SendTransactionParams>,
+  sendTransaction: SimpleActionCreator<SendEthTransactionParams | SendFilTransactionParams>,
   sendERC721TransferFrom: SimpleActionCreator<ERC721TransferFromParams>,
   fullTokenList: BraveWallet.BlockchainToken[]
 ) {
@@ -225,14 +226,26 @@ export default function useSend (
       coin: selectedAccount.coin
     })
 
-    !selectedSendAsset.isErc721 && !selectedSendAsset.isErc20 && sendTransaction({
-      from: selectedAccount.address,
-      to: toAddress,
-      value: new Amount(sendAmount)
-        .multiplyByDecimals(selectedSendAsset.decimals)
-        .toHex(),
-      coin: selectedAccount.coin
-    })
+    if (selectedSendAsset.isErc721 || selectedSendAsset.isErc20) { return }
+    if (selectedAccount.coin === BraveWallet.CoinType.ETH) {
+      sendTransaction({
+        from: selectedAccount.address,
+        to: toAddress,
+        value: new Amount(sendAmount)
+          .multiplyByDecimals(selectedSendAsset.decimals)
+          .toHex(),
+        coin: selectedAccount.coin
+      } as SendEthTransactionParams)
+    } else if (selectedAccount.coin === BraveWallet.CoinType.FIL) {
+      sendTransaction({
+        from: selectedAccount.address,
+        to: toAddress,
+        value: new Amount(sendAmount)
+          .multiplyByDecimals(selectedSendAsset.decimals)
+          .toHex(),
+        coin: selectedAccount.coin
+      } as SendFilTransactionParams)
+    }
 
     setToAddressOrUrl('')
     setSendAmount('')

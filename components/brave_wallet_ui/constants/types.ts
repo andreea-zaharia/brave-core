@@ -356,6 +356,10 @@ interface BaseTransactionParams {
   from: string
   to: string
   value: string
+  coin: BraveWallet.CoinType
+}
+
+interface BaseEthTransactionParams extends BaseTransactionParams{
   gas?: string
 
   // Legacy gas pricing
@@ -368,15 +372,24 @@ interface BaseTransactionParams {
   coin: BraveWallet.CoinType
 }
 
-export interface SendTransactionParams extends BaseTransactionParams {
+export interface SendFilTransactionParams extends BaseTransactionParams {
+  nonce?: string
+  gasPremium?: string
+  gasFeeCap?: string
+  gasLimit?: string
+  maxFee?: string
+  cid?: string
+}
+
+export interface SendEthTransactionParams extends BaseEthTransactionParams {
   data?: number[]
 }
 
-export interface ER20TransferParams extends BaseTransactionParams {
+export interface ER20TransferParams extends BaseEthTransactionParams {
   contractAddress: string
 }
 
-export interface ERC721TransferFromParams extends BaseTransactionParams {
+export interface ERC721TransferFromParams extends BaseEthTransactionParams {
   contractAddress: string
   tokenId: string
 }

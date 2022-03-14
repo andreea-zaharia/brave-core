@@ -57,6 +57,13 @@ function getWalletState (store: Store): WalletState {
   return store.getState().wallet
 }
 
+function GetCoinFromTxData (txDataUnion: BraveWallet.TxDataUnion): BraveWallet.CoinType | false {
+  if (txDataUnion.ethTxData || txDataUnion.ethTxData1559) { return BraveWallet.CoinType.ETH }
+  if (txDataUnion.filTxData) { return BraveWallet.CoinType.FIL }
+  if (txDataUnion.solanaTxData) { return BraveWallet.CoinType.SOL }
+  return false
+}
+
 async function refreshWalletInfo (store: Store) {
   const walletHandler = getWalletPanelApiProxy().walletHandler
   const result = await walletHandler.getWalletInfo()
@@ -214,11 +221,13 @@ handler.on(PanelActions.approveHardwareTransaction.getType(), async (store: Stor
   const hardwareAccount: HardwareInfo = found.hardware
   await navigateToConnectHardwareWallet(store)
   const apiProxy = getWalletPanelApiProxy()
+  await store.dispatch(PanelActions.navigateToMain())
+  const coin = GetCoinFromTxData(txInfo.txDataUnion)
+  if (!coin) { return }
   if (hardwareAccount.vendor === BraveWallet.LEDGER_HARDWARE_VENDOR) {
     const { success, error, code } = await signLedgerTransaction(apiProxy, hardwareAccount.path, txInfo)
     if (success) {
-      await store.dispatch(PanelActions.navigateToMain())
-      refreshTransactionHistory(txInfo.fromAddress)
+      refreshTransactionHistory(coin, txInfo.fromAddress)
       return
     }
 
@@ -242,7 +251,7 @@ handler.on(PanelActions.approveHardwareTransaction.getType(), async (store: Stor
   } else if (hardwareAccount.vendor === BraveWallet.TREZOR_HARDWARE_VENDOR) {
     const { success, error, deviceError } = await signTrezorTransaction(apiProxy, hardwareAccount.path, txInfo)
     if (success) {
-      refreshTransactionHistory(txInfo.fromAddress)
+      refreshTransactionHistory(coin, txInfo.fromAddress)
       await store.dispatch(PanelActions.navigateToMain())
       return
     }

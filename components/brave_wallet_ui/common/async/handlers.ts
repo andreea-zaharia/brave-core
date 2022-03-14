@@ -26,11 +26,12 @@ import {
   ApproveERC20Params,
   ER20TransferParams,
   ERC721TransferFromParams,
-  SendTransactionParams,
+  SendEthTransactionParams,
   SwapErrorResponse,
   WalletAccountType,
   WalletState,
-  WalletInfo
+  WalletInfo,
+  SendFilTransactionParams
 } from '../../constants/types'
 
 // Utils
@@ -90,7 +91,7 @@ async function refreshWalletInfo (store: Store) {
       BraveWallet.ExternalWalletType.MetaMask)
   store.dispatch(WalletActions.setMetaMaskInstalled(mmResult.installed))
 
-  await store.dispatch(refreshTransactionHistory())
+  await store.dispatch(refreshTransactionHistory(BraveWallet.CoinType.ETH))
   await store.dispatch(refreshSitePermissions())
 }
 
@@ -205,7 +206,7 @@ handler.on(WalletActions.selectAccount.getType(), async (store: Store, payload: 
 
   await keyringService.setSelectedAccount(payload.address, payload.coin)
   store.dispatch(WalletActions.setSelectedAccount(payload))
-  await store.dispatch(refreshTransactionHistory(payload.address))
+  await store.dispatch(refreshTransactionHistory(payload.coin, payload.address))
 })
 
 handler.on(WalletActions.initialized.getType(), async (store: Store, payload: WalletInfo) => {
@@ -239,7 +240,7 @@ handler.on(WalletActions.initialized.getType(), async (store: Store, payload: Wa
 
   // This can be 0 when the wallet is locked
   if (payload.selectedAccount) {
-    await store.dispatch(refreshTransactionHistory(payload.selectedAccount))
+    await store.dispatch(refreshTransactionHistory(BraveWallet.CoinType.ETH, payload.selectedAccount))
   }
 })
 
@@ -281,14 +282,14 @@ handler.on(WalletActions.selectPortfolioTimeline.getType(), async (store: Store,
   await store.dispatch(refreshTokenPriceHistory(payload))
 })
 
-handler.on(WalletActions.sendTransaction.getType(), async (store: Store, payload: SendTransactionParams) => {
+handler.on(WalletActions.sendTransaction.getType(), async (store: Store, payload: SendEthTransactionParams | SendFilTransactionParams) => {
   let addResult
-  if (payload.coin === BraveWallet.CoinType.FIL) {
-    addResult = await sendFilTransaction(payload)
-  } else {
-    addResult = await sendEthTransaction(store, payload)
+  if (payload.coin === BraveWallet.CoinType.ETH) {
+    addResult = await sendEthTransaction(store, payload as SendEthTransactionParams)
+  } else if (payload.coin === BraveWallet.CoinType.FIL) {
+    addResult = await sendFilTransaction(payload as SendFilTransactionParams)
   }
-  if (!addResult.success) {
+  if (addResult && !addResult.success) {
     console.log(
       'Sending unapproved transaction failed: ' +
       `from=${payload.from} err=${addResult.errorMessage}`
@@ -296,7 +297,7 @@ handler.on(WalletActions.sendTransaction.getType(), async (store: Store, payload
     return
   }
   // Refresh the transaction history of the origin account.
-  await store.dispatch(refreshTransactionHistory(payload.from))
+  await store.dispatch(refreshTransactionHistory(payload.coin, payload.from))
 })
 
 handler.on(WalletActions.sendERC20Transfer.getType(), async (store: Store, payload: ER20TransferParams) => {
@@ -372,13 +373,13 @@ handler.on(WalletActions.approveTransaction.getType(), async (store: Store, txIn
     console.error(`Failed to approve transaction: ${result.errorMessage}`)
   }
 
-  await store.dispatch(refreshTransactionHistory(txInfo.fromAddress))
+  await store.dispatch(refreshTransactionHistory(coin, txInfo.fromAddress))
 })
 
 handler.on(WalletActions.rejectTransaction.getType(), async (store: Store, txInfo: BraveWallet.TransactionInfo) => {
   const apiProxy = getAPIProxy()
   await apiProxy.txService.rejectTransaction(BraveWallet.CoinType.ETH, txInfo.id)
-  await store.dispatch(refreshTransactionHistory(txInfo.fromAddress))
+  await store.dispatch(refreshTransactionHistory(BraveWallet.CoinType.ETH, txInfo.fromAddress))
 })
 
 handler.on(WalletActions.rejectAllTransactions.getType(), async (store) => {
@@ -599,7 +600,7 @@ handler.on(WalletActions.retryTransaction.getType(), async (store: Store, payloa
     )
   } else {
     // Refresh the transaction history of the origin account.
-    await store.dispatch(refreshTransactionHistory(payload.fromAddress))
+    await store.dispatch(refreshTransactionHistory(BraveWallet.CoinType.ETH, payload.fromAddress))
   }
 })
 
@@ -614,7 +615,7 @@ handler.on(WalletActions.speedupTransaction.getType(), async (store: Store, payl
     )
   } else {
     // Refresh the transaction history of the origin account.
-    await store.dispatch(refreshTransactionHistory(payload.fromAddress))
+    await store.dispatch(refreshTransactionHistory(BraveWallet.CoinType.ETH, payload.fromAddress))
   }
 })
 
@@ -629,7 +630,7 @@ handler.on(WalletActions.cancelTransaction.getType(), async (store: Store, paylo
     )
   } else {
     // Refresh the transaction history of the origin account.
-    await store.dispatch(refreshTransactionHistory(payload.fromAddress))
+    await store.dispatch(refreshTransactionHistory(BraveWallet.CoinType.ETH, payload.fromAddress))
   }
 })
 

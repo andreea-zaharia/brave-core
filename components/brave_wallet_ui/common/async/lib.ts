@@ -14,7 +14,8 @@ import {
   AccountInfo,
   BraveKeyrings,
   GetBlockchainTokenInfoReturnInfo,
-  SendTransactionParams
+  SendEthTransactionParams,
+  SendFilTransactionParams
 } from '../../constants/types'
 import * as WalletActions from '../actions/wallet_actions'
 
@@ -304,7 +305,7 @@ export function refreshTokenPriceHistory (selectedPortfolioTimeline: BraveWallet
   }
 }
 
-export function refreshTransactionHistory (address?: string) {
+export function refreshTransactionHistory (coin: BraveWallet.CoinType, address?: string) {
   return async (dispatch: Dispatch, getState: () => State) => {
     const apiProxy = getAPIProxy()
     const { txService } = apiProxy
@@ -317,7 +318,7 @@ export function refreshTransactionHistory (address?: string) {
 
     const freshTransactions: AccountTransactions = await accountsToUpdate.reduce(
       async (acc, account) => acc.then(async (obj) => {
-        const { transactionInfos } = await txService.getAllTransactionInfo(BraveWallet.CoinType.FIL, account.address)
+        const { transactionInfos } = await txService.getAllTransactionInfo(coin, account.address)
         obj[account.address] = transactionInfos
         return obj
       }), Promise.resolve({}))
@@ -435,7 +436,7 @@ export function hasEIP1559Support (account: WalletAccountType, network: BraveWal
   return keyringSupportsEIP1559 && (network.data?.ethData?.isEip1559 ?? false)
 }
 
-export async function sendEthTransaction (store: Store, payload: SendTransactionParams) {
+export async function sendEthTransaction (store: Store, payload: SendEthTransactionParams) {
   const apiProxy = getAPIProxy()
   /***
    * Determine whether to create a legacy or EIP-1559 transaction.
@@ -443,7 +444,7 @@ export async function sendEthTransaction (store: Store, payload: SendTransaction
    * isEIP1559 is true IFF:
    *   - network supports EIP-1559
    *   - keyring supports EIP-1559 (ex: certain hardware wallets vendors)
-   *   - payload: SendTransactionParams has specified EIP-1559 gas-pricing
+   *   - payload: SendEthTransactionParams has specified EIP-1559 gas-pricing
    *     fields.
    *
    * In all other cases, fallback to legacy gas-pricing fields.
@@ -499,17 +500,17 @@ export async function sendEthTransaction (store: Store, payload: SendTransaction
   return addResult
 }
 
-export async function sendFilTransaction (payload: SendTransactionParams) {
+export async function sendFilTransaction (payload: SendFilTransactionParams) {
   const apiProxy = getAPIProxy()
   const filTxData: BraveWallet.FilTxData = {
-    nonce: '',
-    gasPremium: '',
-    gasFeeCap: '',
-    gasLimit: payload.gas || '',
-    maxFee: '0',
+    nonce: payload.nonce || '',
+    gasPremium: payload.gasPremium || '',
+    gasFeeCap: payload.gasFeeCap || '',
+    gasLimit: payload.gasLimit || '',
+    maxFee: payload.maxFee || '0',
     to: payload.to,
     value: payload.value,
-    cid: ''
+    cid: payload.cid || ''
   }
   // @ts-expect-error google closure is ok with undefined for other fields but mojom runtime is not
   return await apiProxy.txService.addUnapprovedTransaction({ filTxData: filTxData }, payload.from)
